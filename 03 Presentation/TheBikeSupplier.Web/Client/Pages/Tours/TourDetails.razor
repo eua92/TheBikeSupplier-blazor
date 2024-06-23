@@ -1,0 +1,130 @@
+﻿@page "/tourdetails"
+@page "/tourdetails/{id:guid}"
+@inject NavigationManager _navigationManager;
+@inject HttpClient _httpClient;
+@inject IToasterService _toasterService;
+@inject IBlazorDialogService _blazorDialogService;
+@inject IEnumTypeService _enumTypeService;
+
+<div class="container mt-5">
+    <h3>@StringResources.TourDetails</h3>
+    <EditForm Model="@SelectedTour">
+        <div class="row">
+            <div class="form-group col-md-6">
+                <label for="name">@StringResources.Name</label>
+                <input type="text" class="form-control" id="name" @bind-value="SelectedTour.Name">
+            </div>
+            <div class="form-group col-md-6">
+                <label for="price">@StringResources.Price</label>
+                <input type="number" class="form-control" id="price" @bind-value="SelectedTour.Price">
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-md-6">
+                <label for="durationType">@StringResources.DurationType</label>
+                <select class="form-control" id="durationType" @bind="SelectedTour.DurationType">
+                    @foreach (var item in _tourDurationTypes)
+                    {
+                        <option value="@item">@item.ToString()</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="duration">@StringResources.Duration</label>
+                <input type="number" class="form-control" id="duration" @bind-value="SelectedTour.Duration">
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-md-6">
+                <label for="level">@StringResources.Level</label>
+                <select class="form-control" id="level" @bind="SelectedTour.Level">
+                    @foreach (var item in _tourLevels)
+                    {
+                        <option value="@item">@item.ToString()</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="maximumPersons">@StringResources.MaximumPersons</label>
+                <input type="number" class="form-control" id="maximumPersons" @bind-value="SelectedTour.MaximumPersons">
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-md-6">
+                <label for="distance">@StringResources.Distance</label>
+                <input type="number" class="form-control" id="distance" @bind-value="SelectedTour.Distance">
+            </div>
+            <div class="form-group col-md-6">
+                <label for="distanceUnit">@StringResources.DistanceUnit</label>
+                <select class="form-control" id="distanceUnit" @bind="SelectedTour.DistanceUnit">
+                    @foreach (var item in _tourDistanceUnits)
+                    {
+                        <option value="@item">@item.ToString()</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="row mb-4">
+            <div class="form-group col-md-6">
+                <label for="image">@StringResources.Image</label>
+                @{
+                    if (!string.IsNullOrWhiteSpace(SelectedTour.ImageSrc) && !SelectedTour.ImageSrc.Contains("data:image/png;base64,"))
+                    {
+                        SelectedTour.ImageSrc = SelectedTour.ImageSrc + $"?v={DateTime.UtcNow.Ticks}";
+                    }
+                }
+                <img class="img-fluid" id="image" src="@SelectedTour.ImageSrc" alt="Product Image">
+                <button type="button" @onclick="@(async() => await ShowUploadImageDialog())" class="btn"><i class="fa-solid fa-pencil"></i></button>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success" @onclick="SaveChanges">@StringResources.SaveChanges</button>
+        <button class="btn btn-warning" @onclick="RedirectToTours">@StringResources.Cancel</button>
+    </EditForm>
+</div>
+
+<UploadImageDialog />
+
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    public TourViewModel SelectedTour { get; set; } = new();
+    private IEnumerable<TourDurationType> _tourDurationTypes = Enum.GetValues(typeof(TourDurationType)).Cast<TourDurationType>();
+    private IEnumerable<TourLevel> _tourLevels = Enum.GetValues(typeof(TourLevel)).Cast<TourLevel>();
+    private IEnumerable<TourDistanceUnit> _tourDistanceUnits = Enum.GetValues(typeof(TourDistanceUnit)).Cast<TourDistanceUnit>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id != Guid.Empty)
+        {
+            SelectedTour = await _httpClient.GetFromJsonAsync<TourViewModel>($"Tour/GetTour/{Id}");
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        HttpResponseMessage response;
+        if (Id == Guid.Empty)
+            response = await _httpClient.PostAsJsonAsync("Tour/Create", SelectedTour);
+        else
+            response = await _httpClient.PostAsJsonAsync("Tour/Update", SelectedTour);
+
+        if (response.IsSuccessStatusCode)
+        {
+            _toasterService.ShowToaster(StringResources.SuccessfullySaved, ToastType.Success);
+            RedirectToTours();
+        }
+    }
+
+    private void RedirectToTours()
+    {
+        _navigationManager.NavigateTo("tours");
+    }
+
+    private async Task ShowUploadImageDialog()
+    {
+        var result = await _blazorDialogService.ShowDialog<(string ImageSrc, byte[] ImageFileContent)>("upload-image-dialog", (SelectedTour.ImageSrc, SelectedTour.ImageFileContent));
+
+        SelectedTour.ImageSrc = result.ImageSrc;
+        SelectedTour.ImageFileContent = result.ImageFileContent;
+    }
+}

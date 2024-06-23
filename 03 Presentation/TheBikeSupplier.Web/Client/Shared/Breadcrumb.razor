@@ -1,0 +1,15 @@
+﻿@inject NavigationManager _navigationManager;
+
+<nav aria-label="breadcrumb" class="mb-5">
+    <ol class="breadcrumb">
+        @foreach (var item in NavBarLinks)
+        {
+            <li class="breadcrumb-item @(item.IsActive ? "active" : string.Empty)"><a href="@item.Link">@item.Name</a></li>
+        }
+    </ol>
+</nav>
+
+@code {
+    [Parameter]
+    public List<NavBarLink> NavBarLinks { get; set; }
+}

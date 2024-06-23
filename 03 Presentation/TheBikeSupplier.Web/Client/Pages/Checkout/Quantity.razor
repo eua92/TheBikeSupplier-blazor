@@ -1,0 +1,38 @@
+﻿@inject IBasketService _basketService;
+
+@if (BasketItem.Quantity > 1)
+{
+    <button class="btn btn-light qty-button" @onclick="SubtractQuantity"><i class="fa-solid fa-minus" /></button>
+}
+else
+{
+    <button class="btn btn-danger qty-button" @onclick="RemoveFromBasket"><i class="fa-regular fa-trash-can" /></button>
+}
+<span class="qty-number">@BasketItem.Quantity</span>
+<button class="btn btn-light qty-button" @onclick="AddQuantity"><i class="fa-solid fa-plus" /></button>
+
+@code{
+    [Parameter] public BasketItemViewModel BasketItem { get; set; }
+
+    private async Task HandleQuantityChange(int newQuantity)
+    {
+        await _basketService.UpdateBasketItemQuantity(BasketItem.Id, newQuantity);
+    }
+
+    private async Task AddQuantity()
+    {
+        BasketItem.Quantity++;
+        await HandleQuantityChange(BasketItem.Quantity);
+    }
+
+    private async Task SubtractQuantity()
+    {
+        BasketItem.Quantity--;
+        await HandleQuantityChange(BasketItem.Quantity);
+    }
+
+    private async Task RemoveFromBasket()
+    {
+        await _basketService.RemoveBasketItem(BasketItem.BasketId, BasketItem.Id);
+    }
+}

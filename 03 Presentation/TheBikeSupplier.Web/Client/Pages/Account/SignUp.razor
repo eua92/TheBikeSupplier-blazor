@@ -1,0 +1,133 @@
+﻿@page "/createAccount"
+@inject NavigationManager _navigationManager
+@inject AppAuthenticationStateProvider _authStateProvider
+
+<Header CssClass="signup-header" />
+<div class="container signup">
+    <div class="row mb-4 mt-3">
+        <div class="col-12">
+            <h2>@StringResources.CreateYourAccount</h2>
+        </div>
+    </div>
+    <EditForm Model="_registerParameters" OnValidSubmit="@(async() => await Register())">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <label for="emailAddress">@StringResources.EmailAddress:</label>
+            <input @bind-value="@_registerParameters.UserName" type="text" class="form-control" id="emailAddress">
+            <ValidationMessage For="@(() => _registerParameters.UserName)"></ValidationMessage>
+        </div>
+
+        <div class="form-group">
+            <label for="firstName">@StringResources.FirstName:</label>
+            <input @bind-value="_registerParameters.FirstName" type="text" class="form-control" id="firstName">
+            <ValidationMessage For="@(() => _registerParameters.FirstName)"></ValidationMessage>
+        </div>
+
+        <div class="form-group">
+            <label for="lastName">@StringResources.LastName:</label>
+            <input @bind-value="_registerParameters.LastName" type="text" class="form-control" id="lastName">
+            <ValidationMessage For="@(() => _registerParameters.LastName)"></ValidationMessage>
+        </div>
+
+        <div class="form-group">
+            <label for="phoneNumber">@StringResources.PhoneNumber:</label>
+            <input @bind-value="@_registerParameters.PhoneNumber" type="text" class="form-control" id="phoneNumber">
+            <ValidationMessage For="@(() => _registerParameters.PhoneNumber)"></ValidationMessage>
+        </div>
+
+        <div class="form-group">
+            <label>@StringResources.DateOfBirth:</label>
+            <div class="row">
+                <div class="col-3 pr-1">
+                    <select class="form-control" @onchange="HandleDayChange">
+                        <option value="">@StringResources.DayShort</option>
+                        @foreach (var item in _dayList)
+                        {
+                            <option value="@((int?)item)">@item.ToString()</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-6 pr-1">
+                    <select class="form-control" @onchange="HandleMonthChange">
+                        <option value="">@StringResources.Month</option>
+                        @foreach (var item in DateInfo.MonthList)
+                        {
+                            <option value="@((int?)item)">@item.ToString()</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-3">
+                    <select class="form-control" @onchange="HandleYearChange">
+                        <option value="">@StringResources.YearShort</option>
+                        @foreach (var item in DateInfo.YearList)
+                        {
+                            <option value="@((int?)item)">@item.ToString()</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <ValidationMessage For="@(() => _registerParameters.DateOfBirth)"></ValidationMessage>
+        </div>
+
+        <div class="form-group">
+            <label for="password">@StringResources.Password:</label>
+            <input @bind-value="@_registerParameters.Password" type="password" class="form-control" id="password">
+            <ValidationMessage For="@(() => _registerParameters.Password)"></ValidationMessage>
+        </div>
+
+        <div class="form-group">
+            <label for="confirmPassword">@StringResources.ConfirmPassword:</label>
+            <input @bind-value="@_registerParameters.ConfirmPassword" type="password" class="form-control" id="confirmPassword">
+            <ValidationMessage For="@(() => _registerParameters.ConfirmPassword)"></ValidationMessage>
+        </div>
+        <button class="btn btn-info btn-block btn-round mb-4" type="submit">@StringResources.Register</button>
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <p class="text-danger">@_errorMessage</p>
+        }
+    </EditForm>
+</div>
+
+@code {
+    private RegisterParameters _registerParameters = new RegisterParameters();
+    private string _errorMessage;
+    private IEnumerable<int> _dayList = DateInfo.CalculateDayList(1, 1);
+
+    private async Task Register()
+    {
+        var result = await _authStateProvider.Register(_registerParameters);
+        if (result.Failed)
+        {
+            _errorMessage = result.ErrorMessage;
+            return;
+        }
+        _navigationManager.NavigateTo("/home");
+    }
+
+    private void HandleDayChange(ChangeEventArgs args)
+    {
+        var canConvert = int.TryParse(args.Value.ToString(), out int valueInt);
+        if (canConvert)
+            _registerParameters.DayOfBirth = valueInt;
+    }
+
+    private void HandleMonthChange(ChangeEventArgs args)
+    {
+        var canConvert = int.TryParse(args.Value.ToString(), out int valueInt);
+        if (canConvert)
+        {
+            _registerParameters.MonthOfBirth = valueInt;
+            _dayList = DateInfo.CalculateDayList(_registerParameters.YearOfBirth.HasValue ? _registerParameters.YearOfBirth.Value : 1, valueInt);
+        }
+    }
+
+    private void HandleYearChange(ChangeEventArgs args)
+    {
+        var canConvert = int.TryParse(args.Value.ToString(), out int valueInt);
+        if (canConvert)
+        {
+            _registerParameters.YearOfBirth = valueInt;
+            _dayList = DateInfo.CalculateDayList(valueInt, _registerParameters.MonthOfBirth.HasValue ? _registerParameters.MonthOfBirth.Value : 1);
+        }
+    }
+}

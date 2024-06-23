@@ -1,0 +1,82 @@
+﻿@inject IBasketService _basketService;
+@inject NavigationManager _navigationManager;
+
+@if (_basketService.Basket.BasketItems.Count > 0)
+{
+    <h3>Your Items</h3>
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="row mb-4 pb-4 pt-3 mr-2 row-border">
+                <div class="d-none d-lg-block col-3">Description</div>
+                <div class="d-none d-lg-block col-9">
+                    <div class="row">
+                        <div class="col-1 offset-4">Price</div>
+                        <div class="d-lg-flex col-4 justify-content-center">Quantity</div>
+                        <div class="col-1">Subtotal</div>
+                    </div>
+                </div>
+            </div>
+            @foreach (var item in Basket.BasketItems)
+            {
+                <div class="row mb-4 mr-2">
+                    <div class="col-6 col-sm-4 col-md-3 mb-2 mb-0-sm">
+                        <img class="img-fluid" src="@item.ImageSrc">
+                    </div>
+                    <div class="col-6 col-sm-8 col-md-9">
+                        <div class="row">
+                            <div class="col-12 col-sm-4 mb-2">
+                                <div>@item.Name</div>
+                            </div>
+                            <div class="d-none d-lg-block col-1">
+                                <div>@item.Price.ToString("c0", CultureInfo.CreateSpecificCulture("gr-GR"))</div>
+                            </div>
+                            <div class="col-12 col-sm-5 col-lg-4 mb-2">
+                                <div class="d-flex justify-content-sm-center">
+                                    <Quantity BasketItem="@item" />
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-1">
+                                <div>@item.TotalPrice.ToString("c0", CultureInfo.CreateSpecificCulture("gr-GR"))</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="col-lg-3 order-summary pr-5 pr-lg-4 pl-5 pl-lg-4">
+            <div class="row">
+                <div class="col-12 mb-2">
+                    <h5>Order Summary</h5>
+                </div>
+                <div class="col-6">Total</div>
+                <div class="col-6 text-right">@Basket.TotalPrice.ToString("c0", CultureInfo.CreateSpecificCulture("gr-GR"))</div>
+                <div class="col-12 mt-2">
+                    <button class="btn btn-info btn-lg btn-block text-uppercase regular-text" @onclick="PlaceOrder">Go to Checkout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <EmptyBasket />
+}
+
+@code {
+    [CascadingParameter] protected Task<AuthenticationState> AuthState { get; set; }
+    [Parameter] public BasketViewModel Basket { get; set; }
+    private AuthenticationState _authState;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _authState = await AuthState;
+    }
+
+    private void PlaceOrder()
+    {
+        if (!_authState.User.Identity.IsAuthenticated)
+            _navigationManager.NavigateTo("/login");
+        else
+            _navigationManager.NavigateTo($"/checkout/{(int)CheckoutSteps.CheckoutSummary}");
+    }
+}

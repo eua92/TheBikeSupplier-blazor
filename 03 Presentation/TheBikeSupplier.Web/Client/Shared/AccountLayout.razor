@@ -1,0 +1,23 @@
+﻿@inherits LayoutComponentBase
+@layout MainLayout
+
+<div class="container top-page-margin">
+    <h3>MyAccount</h3>
+    <div class="row">
+        <div class="col-3">
+            <ul class="nav flex-column nav-pills">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="myAccount">My Account</NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="myOrders">My Orders</NavLink>
+                </li>                             
+            </ul>
+        </div>
+        <div class="col-9">
+            <div class="tab-content">
+                <div class="tab-pane fade show active">@Body</div>
+            </div>
+        </div>
+    </div>
+</div>

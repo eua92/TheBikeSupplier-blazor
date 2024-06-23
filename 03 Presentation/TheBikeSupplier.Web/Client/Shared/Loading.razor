@@ -1,0 +1,15 @@
+﻿@if (!IsLoading)
+{
+    @ChildContent
+}
+else
+{
+    <div class="container top-page-margin">
+        <p>Loading</p>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public RenderFragment ChildContent { get; set; }
+}

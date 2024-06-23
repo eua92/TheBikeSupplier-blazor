@@ -1,0 +1,70 @@
+﻿<BlazorDialog.Dialog Id="edit-address" Size="DialogSize.Normal" Centered="true" @ref="_dialog" OnBeforeShow="OnDialogShow">
+    <DialogInputProvider TInput="OrderAddressViewModel">
+        <EditForm Model="_orderAddress" Context="editForm" OnValidSubmit=@Save>
+            <DialogBody>
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <label for="firstNames">@StringResources.FirstName:</label>
+                    <input @bind-value="@_orderAddress.FirstName" type="text" class="form-control" id="firstName">
+                    <ValidationMessage For="@(() => _orderAddress.FirstName)"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">@StringResources.LastName:</label>
+                    <input @bind-value="@_orderAddress.LastName" type="text" class="form-control" id="lastName">
+                    <ValidationMessage For="@(() => _orderAddress.LastName)"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label for="address">@StringResources.Address:</label>
+                    <input @bind-value="@_orderAddress.Address" type="text" class="form-control" id="address">
+                    <ValidationMessage For="@(() => _orderAddress.Address)"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label for="city">@StringResources.City:</label>
+                    <input @bind-value="@_orderAddress.City" type="text" class="form-control" id="city">
+                    <ValidationMessage For="@(() => _orderAddress.City)"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label for="country">@StringResources.Country:</label>
+                    <input @bind-value="@_orderAddress.Country" type="text" class="form-control" id="country">
+                    <ValidationMessage For="@(() => _orderAddress.Country)"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label for="postCode">@StringResources.PostCode:</label>
+                    <input @bind-value="@_orderAddress.PostCode" type="text" class="form-control" id="postCode">
+                    <ValidationMessage For="@(() => _orderAddress.PostCode)"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label for="email">@StringResources.EmailAddress:</label>
+                    <input @bind-value="@_orderAddress.Email" type="text" class="form-control" id="email">
+                    <ValidationMessage For="@(() => _orderAddress.Email)"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label for="phoneNumber">@StringResources.PhoneNumber:</label>
+                    <input @bind-value="@_orderAddress.PhoneNumber" type="text" class="form-control" id="phoneNumber">
+                    <ValidationMessage For="@(() => _orderAddress.PhoneNumber)"></ValidationMessage>
+                </div>
+
+            </DialogBody>
+            <DialogFooter>
+                <button type="submit" class="btn btn-info">@StringResources.Save</button>
+                <button type="button" class="btn btn-info" @onclick="@(() => _dialog.Hide())">@StringResources.Cancel</button>
+            </DialogFooter>
+        </EditForm>
+    </DialogInputProvider>
+</BlazorDialog.Dialog>
+
+
+@code {
+    private BlazorDialog.Dialog _dialog;
+    private OrderAddressViewModel _orderAddress;
+
+    private void OnDialogShow(DialogBeforeShowEventArgs args)
+    {
+        _orderAddress = (OrderAddressViewModel)args.Dialog.Input;
+    }
+
+    private async Task Save()
+    {
+        await _dialog.Hide(_orderAddress);
+    }
+}

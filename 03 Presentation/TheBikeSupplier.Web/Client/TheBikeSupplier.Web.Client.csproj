@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BlazorDialog" Version="1.5.0" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.2.0" />
+    <PackageReference Include="CurrieTechnologies.Razor.SweetAlert2" Version="5.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="5.0.17" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.12" PrivateAssets="all" />
+    <PackageReference Include="Sotsera.Blazor.Toaster" Version="3.0.0" />
+    <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
+    <PackageReference Include="Tewr.Blazor.FileReader" Version="3.3.1.21360" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\00 Domain\TheBikeSupplier.Common\TheBikeSupplier.Common.csproj" />
+    <ProjectReference Include="..\..\..\00 Domain\TheBikeSupplier.Resources\TheBikeSupplier.Resources.csproj" />
+    <ProjectReference Include="..\..\..\01 DataAccess\TheBikeSupplier.Models.Client\TheBikeSupplier.Models.Client.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,101 @@
+﻿@page "/bikedetails/{acquisitionType:int}"
+@page "/bikedetails/{id:guid}/{acquisitionType:int}"
+@inject NavigationManager _navigationManager;
+@inject HttpClient _httpClient;
+@inject IToasterService _toasterService;
+@inject IBlazorDialogService _blazorDialogService
+
+<div class="container top-page-margin">
+    <h3>@StringResources.BikeDetails</h3>
+    <EditForm Model="@SelectedBike">
+        <div class="row">
+            <div class="form-group col-md-6">
+                <label for="name">@StringResources.Name</label>
+                <input type="text" class="form-control" id="name" @bind-value="SelectedBike.Name">
+            </div>
+            <div class="form-group col-md-6">
+                <label for="price">@StringResources.Price</label>
+                <input type="number" class="form-control" id="price" @bind-value="SelectedBike.Price">
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-md-6">
+                <label for="price">@StringResources.Stock</label>
+                <input type="number" class="form-control" id="stock" @bind-value="SelectedBike.Stock">
+            </div>
+            <div class="form-group col-md-6">
+                <label for="kind">@StringResources.Kind</label>
+                <select class="form-control" id="kind" @bind="SelectedBike.Kind">
+                    @foreach (var item in _bikeKinds)
+                    {
+                        <option value="@item">@item.ToString()</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="row mb-4">
+            <div class="form-group col-md-6">
+                <label for="address">@StringResources.Image</label>
+                @{
+                    if (!string.IsNullOrWhiteSpace(SelectedBike.ImageSrc) && !SelectedBike.ImageSrc.Contains("data:image/png;base64,"))
+                    {
+                        SelectedBike.ImageSrc = SelectedBike.ImageSrc + $"?v={DateTime.UtcNow.Ticks}";
+                    }
+                }
+                <img class="img-fluid" src="@SelectedBike.ImageSrc" alt="Product Image">
+                <button type="button" @onclick="@(async() => await ShowUploadImageDialog())" class="btn"><i class="fa-solid fa-pencil"></i></button>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success" @onclick="SaveChanges">@StringResources.SaveChanges</button>
+        <button class="btn btn-warning" @onclick="RedirectToBikes">@StringResources.Cancel</button>
+    </EditForm>
+</div>
+
+<UploadImageDialog />
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [Parameter] public AcquisitionType AcquisitionType { get; set; }
+    public BikeViewModel SelectedBike { get; set; } = new();
+    private IEnumerable<BikeKind> _bikeKinds = Enum.GetValues(typeof(BikeKind)).Cast<BikeKind>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id != Guid.Empty)
+        {
+            SelectedBike = await _httpClient.GetFromJsonAsync<BikeViewModel>($"Bike/GetBike/{Id}");
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        HttpResponseMessage response;
+        SelectedBike.Type = AcquisitionType;
+        if (Id == Guid.Empty)
+            response = await _httpClient.PostAsJsonAsync("Bike/Create", SelectedBike);
+        else
+            response = await _httpClient.PostAsJsonAsync("Bike/Update", SelectedBike);
+
+        if (response.IsSuccessStatusCode)
+        {
+            _toasterService.ShowToaster(StringResources.SuccessfullySaved, ToastType.Success);
+            RedirectToBikes();
+        }
+    }
+
+    private void RedirectToBikes()
+    {
+        if (AcquisitionType == AcquisitionType.Buy)
+            _navigationManager.NavigateTo("bikes");
+        else
+            _navigationManager.NavigateTo("rent");
+    }
+
+    private async Task ShowUploadImageDialog()
+    {
+        var result = await _blazorDialogService.ShowDialog<(string ImageSrc, byte[] ImageFileContent)>("upload-image-dialog", (SelectedBike.ImageSrc, SelectedBike.ImageFileContent));
+
+        SelectedBike.ImageSrc = result.ImageSrc;
+        SelectedBike.ImageFileContent = result.ImageFileContent;
+    }
+}

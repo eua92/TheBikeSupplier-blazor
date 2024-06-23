@@ -1,0 +1,110 @@
+﻿@inject NavigationManager _navigationManager;
+@inject HttpClient _httpClient;
+@inject IBasketService _basketService;
+@inject IBlazorDialogService _blazorDialogService;
+@inject IWishListService _wishListService;
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <button class="btn btn-link" @onclick="ToggleRoadBikes">@Title</button>
+        </h5>
+    </div>
+
+    @if (ShowBikeList)
+    {
+        <div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach (var item in Data)
+                    {
+                        <div class="col-md-6 col-lg-4 pb-4">
+                            <div class="item-box">
+                                <figure class="hovereffect">
+                                    <img alt="@item.Name" class="img-fluid" src="@(item.ImageSrc + $"?v={DateTime.UtcNow.Ticks}")">
+                                    <div class="overlay d-flex flex-row justify-content-center">
+                                        @if (!_authState.User.IsInRole(Roles.Admin))
+                                        {
+                                            <button @onclick="(() => AddToWishList(item.Id))" class="info btn btn-info mt-auto mb-3 mr-3 @(item.InWishList ? "wish-list-btn" : string.Empty)">
+                                                <i class="fa fa-heart"></i>
+                                            </button>
+                                        }
+                                        <button @onclick="(() => ShowQuickviewDialog(item))" class="info btn btn-info mt-auto mb-3 mr-3">
+                                            <i class="fa fa-eye"></i>
+                                        </button>
+                                        @if (!_authState.User.IsInRole(Roles.Admin))
+                                        {
+                                            <button @onclick="(() => AddToBasket(item.Id))" class="info btn btn-info mt-auto mb-3">
+                                                <i class="fa fa-shopping-cart"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                    @if (item.Stock < 100)
+                                    {
+                                        <div class="productStock @(item.Stock == 0 ? "outOfStock" : "lowInStock")">@(item.Stock == 0 ? "Out of stock" : $"Only {item.Stock} left")</div>
+                                    }
+                                </figure>
+                                <h5 class="h6">@item.Name.ToUpper()</h5>
+                                <h6 class="h5">@item.Price.ToString("c0", CultureInfo.CreateSpecificCulture("gr-GR"))</h6>
+                                <AuthorizeView Roles="@Roles.Admin">
+                                    <div class="mt-2">
+                                        <button class="btn btn-warning" @onclick="(() => Details(item.Id))">@StringResources.Edit</button>
+                                        <button class="btn btn-danger" asp-page-handler="delete" @onclick="(() => Delete(item.Id))">@StringResources.Delete</button>
+                                    </div>
+                                </AuthorizeView>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<QuickViewModal />
+
+@code {
+    [Parameter] public string Title { get; set; }
+    [Parameter] public List<BikeViewModel> Data { get; set; }
+    [Parameter] public EventCallback<Guid> OnDelete { get; set; }
+    [Parameter] public EventCallback OnLoad { get; set; }
+    [Parameter] public bool ShowBikeList { get; set; }
+    [CascadingParameter] protected Task<AuthenticationState> AuthState { get; set; }
+    private AuthenticationState _authState;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _authState = await AuthState;
+    }
+
+    private void ToggleRoadBikes()
+    {
+        ShowBikeList = !ShowBikeList;
+    }
+
+    private void Details(Guid bikeId)
+    {
+        _navigationManager.NavigateTo($"/bikedetails/{bikeId}/{(int)AcquisitionType.Buy}");
+    }
+
+    private async Task Delete(Guid bikeId)
+    {
+        await OnDelete.InvokeAsync(bikeId);
+    }
+
+    private async Task AddToBasket(Guid bikeId)
+    {
+        await _basketService.AddBasketItem(bikeId, _authState.User);
+    }
+
+    private async Task ShowQuickviewDialog(BikeViewModel item)
+    {
+        await _blazorDialogService.ShowDialog("quickview-modal", item);
+    }
+
+    private async Task AddToWishList(Guid bikeId)
+    {
+        await _wishListService.AddWishListItem(bikeId, _authState.User);
+        await OnLoad.InvokeAsync();
+    }
+}

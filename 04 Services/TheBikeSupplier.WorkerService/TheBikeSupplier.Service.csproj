@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <UserSecretsId>dotnet-TheBikeSupplier.WorkerService-25DF21C9-1AFF-4A7E-8E34-CF621032487C</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\02 BusinessLogic\TheBikeSupplier.DataServices.Implementations\TheBikeSupplier.DataServices.Implementations.csproj" />
+    <ProjectReference Include="..\..\02 BusinessLogic\TheBikeSupplier.DataServices.Interfaces\TheBikeSupplier.DataServices.Interfaces.csproj" />
+  </ItemGroup>
+</Project>

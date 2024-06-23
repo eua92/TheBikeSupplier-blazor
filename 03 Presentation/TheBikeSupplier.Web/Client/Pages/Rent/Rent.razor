@@ -1,0 +1,116 @@
+﻿@page "/rent"
+@inject NavigationManager _navigationManager;
+@inject HttpClient _httpClient;
+@inject IDialogService _dialogService;
+@inject IToasterService _toasterService;
+@using System.Globalization;
+
+<Header CssClass="rent-header" />
+<Breadcrumb NavBarLinks="_navBarLinks"/>
+<div class="container">
+    <AuthorizeView Roles="@Roles.Admin">
+        <button class="btn btn-primary mb-4" @onclick="(() => AddBike())">@StringResources.AddBike</button>
+    </AuthorizeView>
+
+    <div class="row mb-4">
+        @foreach (var item in Data)
+        {
+            <div class="col-md-6 col-lg-4 pb-4">
+                <div class="item-box">
+                    <figure class="hovereffect">
+                        <img alt="@item.Name" class="img-fluid" src="@(item.ImageSrc + $"?v={DateTime.UtcNow.Ticks}")">
+                        <div class="overlay d-flex flex-row justify-content-center">
+                            <button data-toggle="modal" data-target="#rentModal"
+                                    class="book btn btn-info mt-auto mb-3">
+                                BOOK NOW
+                            </button>
+                        </div>
+                    </figure>
+                    <h4 class="pb-2">@item.Name</h4>
+                    <div class="row ml-auto">
+                        <div class="col-6 text-left">
+                            <span class="h6">Per Day:</span><br>
+                            <span>@item.Price.ToString("c0", CultureInfo.CreateSpecificCulture("gr-GR"))</span>
+                        </div>
+                        <div class="col-6 text-left">
+                            <span class="h6">Per Week:</span><br>
+                            @{
+                                var pricePerWeek = item.Price * 5;
+                            }
+                            <span>@pricePerWeek.ToString("c0", CultureInfo.CreateSpecificCulture("gr-GR"))</span>
+                        </div>
+                    </div>
+                    <AuthorizeView Roles="@Roles.Admin">
+                        <div class="mt-2">
+                            <button class="btn btn-warning" @onclick="(() => Details(item.Id))">@StringResources.Edit</button>
+                            <button class="btn btn-danger" asp-page-handler="delete" @onclick="(() => Delete(item.Id))">@StringResources.Delete</button>
+                        </div>                       
+                    </AuthorizeView>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    public List<BikeViewModel> Data { get; set; } = new();
+    private List<NavBarLink> _navBarLinks { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBikes();
+
+        _navBarLinks = new List<NavBarLink>
+        {
+            new NavBarLink
+            {
+                Name = StringResources.Home,
+                Link = "/home"
+            },
+            new NavBarLink
+            {
+                Name = StringResources.Rent,
+                Link = "/rent",
+                IsActive = true
+            }
+        };
+    }
+
+    private async Task LoadBikes()
+    {
+        var response = await _httpClient.GetAsync($"Bike/GetBikes/{(int)AcquisitionType.Rent}");
+        if (response.IsSuccessStatusCode)
+        {
+            Data = await response.Content.ReadFromJsonAsync<List<BikeViewModel>>();
+        }
+    }
+
+    private void AddBike()
+    {
+        _navigationManager.NavigateTo($"/bikedetails/{(int)AcquisitionType.Rent}");
+    }
+
+    private void Details(Guid bikeId)
+    {
+        _navigationManager.NavigateTo($"/bikedetails/{bikeId}/{(int)AcquisitionType.Rent}");
+    }
+
+    private async Task Delete(Guid bikeId)
+    {
+        var result = await _dialogService.ShowConfirm(StringResources.DeleteQuestionMessage, DialogType.YesNo);
+        if (!result.IsConfirmed)
+            return;
+
+        var response = await _httpClient.DeleteAsync($"Bike/DeleteBike/{bikeId}");
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+            await _dialogService.ShowMessage(message.Detail, DialogMessageType.Error);
+            return;
+        }
+        _toasterService.ShowToaster(StringResources.DeleteSuccessMessage, ToastType.Success);
+
+        var deleteImageResponse = await _httpClient.DeleteAsync($"Bike/DeleteBikeImage/{bikeId}");
+        await LoadBikes();
+    }
+}

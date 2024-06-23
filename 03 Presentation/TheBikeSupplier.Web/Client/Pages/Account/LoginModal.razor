@@ -1,0 +1,33 @@
+﻿@inject NavigationManager _navigationManager
+
+<BlazorDialog.Dialog Id="login-modal" Size="DialogSize.Normal" Centered="true" @ref="_dialog">
+    <DialogHeader ShowClose="true" CssClass="modal-underline">
+        <h4 class="modal-title">@StringResources.Login</h4>
+    </DialogHeader>
+    <DialogBody CssClass="modal-underline">
+        <LoginForm OnLogin="OnLogin" />
+    </DialogBody>
+    <BlazorDialog.DialogFooter>
+        <div class="options text-right">
+            <p class="pt-1">@StringResources.NotAMember<button @onclick="SignUpHandler" class="btn btn-link align-top p-0">@StringResources.SignUp</button></p>
+        </div>
+        <button type="button" class="btn btn-info ml-auto" @onclick="@(() => _dialog.Hide(false))">@StringResources.Cancel</button>
+    </BlazorDialog.DialogFooter>
+</BlazorDialog.Dialog>
+
+
+@code {
+    private BlazorDialog.Dialog _dialog;
+
+    private async Task SignUpHandler()
+    {
+        await _dialog.Hide(false);
+        _navigationManager.NavigateTo("/createAccount");
+    }
+
+    private async Task OnLogin(bool loginResult)
+    {
+        if (loginResult)
+            await _dialog.Hide(false);
+    }
+}

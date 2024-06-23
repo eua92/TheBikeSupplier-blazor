@@ -1,0 +1,65 @@
+﻿@page "/repair"
+
+<Header CssClass="repair-header" />
+<Breadcrumb NavBarLinks="_navBarLinks" />
+<div class="container">
+    <div class="row d-flex justify-content-center mb-4">
+        <div class="col-11 pb-3" style="border-bottom: 1px solid lightgray;;">
+            <h1>Repair your Bike</h1>
+        </div>
+    </div>
+    <div class="row d-flex justify-content-center mb-4">
+        <div class="col-11 pb-3" style="border-bottom: 1px solid lightgray;;">
+            <p>
+                The Bike Supplier offers high quality repair services to any type of bike. Our staff is
+                highly equipped to handle any type of fix from a quick flat tire change to a full bike
+                tune.
+            </p>
+            <h2 class="mb-3">Our most common services include:</h2>
+            <ul>
+                <li class="mb-2">Replace or fix a flat tire</li>
+                <li class="mb-2">Clean and lubricate the chain</li>
+                <li class="mb-2">Replace the chainrings</li>
+                <li class="mb-2">Lubricate brakes or cables</li>
+                <li class="mb-2">Replace or adjust v-brakes</li>
+                <li class="mb-2">Adjust the front or rear derailleur</li>
+                <li class="mb-2">Replace handlebar grips</li>
+                <li class="mb-2">Wheel truing</li>
+                <li class="mb-2">Adjust the brackets</li>
+                <li class="mb-2">Replace the pedals</li>
+            </ul>
+        </div>
+    </div>
+    <div class="row d-flex justify-content-center mb-5">
+        <div class="col-11">
+            <h2 class="mb-3">Special offer - Full Bike Tune</h2>
+            <p>
+                A full service in order to ensure that your bike is in perfect condition. It includes a full
+                bike checkup, cleaning, lubrication and adjustment to brakes and shift cable, wheel truing,
+                and bracket adjustment.
+            </p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<NavBarLink> _navBarLinks { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _navBarLinks = new List<NavBarLink>
+        {
+            new NavBarLink
+            {
+                Name = StringResources.Home,
+                Link = "/home"
+            },
+            new NavBarLink
+            {
+                Name = StringResources.Repair,
+                Link = "/repair",
+                IsActive = true
+            }
+        };
+    }
+}

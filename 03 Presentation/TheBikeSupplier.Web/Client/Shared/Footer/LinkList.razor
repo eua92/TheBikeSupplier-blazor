@@ -1,0 +1,12 @@
+﻿<ul class="@(IsCollapsed ? "list-unstyled" : "list-group")">
+    @foreach (var item in FooterLinks)
+    {
+        <li class="@(IsCollapsed ? "" : "list-group-item") text-capitalize"><a href="@item.Link">@item.Name</a></li>
+    }
+</ul>
+
+@code {
+    [Parameter] public bool IsCollapsed { get; set; }
+    [Parameter] public IList<NavBarLink> FooterLinks { get; set; } = new List<NavBarLink>();
+
+}

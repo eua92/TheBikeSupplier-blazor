@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="5.0.17" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.17">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\01 DataAccess\TheBikeSupplier.EF\TheBikeSupplier.EF.csproj" />
+    <ProjectReference Include="..\..\..\01 DataAccess\TheBikeSupplier.Models.Client\TheBikeSupplier.Models.Client.csproj" />
+    <ProjectReference Include="..\..\..\02 BusinessLogic\TheBikeSupplier.DataServices.Implementations\TheBikeSupplier.DataServices.Implementations.csproj" />
+    <ProjectReference Include="..\..\..\02 BusinessLogic\TheBikeSupplier.DataServices.Interfaces\TheBikeSupplier.DataServices.Interfaces.csproj" />
+    <ProjectReference Include="..\Client\TheBikeSupplier.Web.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+
+</Project>

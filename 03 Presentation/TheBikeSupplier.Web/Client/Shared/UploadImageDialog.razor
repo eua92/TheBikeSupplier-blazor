@@ -1,0 +1,83 @@
+﻿@using System.IO;
+@inject IDialogService _dialogService;
+@inject IFileReaderService _fileReaderService;
+
+<Dialog Centered="true" Size="BlazorDialog.DialogSize.Normal" Id="upload-image-dialog" OnBeforeShow="OnDialogShow" @ref="_dialog">
+    <DialogInputProvider TInput="(string ImageSrc, byte[] ImageFileContent)">
+        <DialogHeader>@StringResources.SetImage</DialogHeader>
+        <DialogBody>
+            <div>
+                <div>
+                    <input type="file" @ref="inputTypeFileElement" />
+                </div>
+            </div>
+        </DialogBody>
+        <DialogFooter>
+            <div>
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-success mr-1" disabled="@_uploading" @onclick="@(async () => await ReadFile())">@StringResources.SetImage</button>
+                    <button class="btn btn-danger mr-1" disabled="@_uploading" @onclick="@(() => { _dialog.Hide(result); })">@StringResources.Cancel</button>
+                    <button class="btn btn-danger" disabled="@_uploading" @onclick="@(() => DeleteImage())">@StringResources.Delete</button>
+                </div>
+            </div>
+        </DialogFooter>
+    </DialogInputProvider>
+</Dialog>
+
+
+@code {
+    [Parameter] public bool _isShowing { get; set; }
+    private bool _uploading = false;
+    ElementReference inputTypeFileElement;
+    private BlazorDialog.Dialog _dialog;
+    private (string ImageSrc, byte[] ImageFileContent) result;
+
+    private void OnDialogShow(DialogBeforeShowEventArgs args)
+    {
+        (result.ImageSrc, result.ImageFileContent) = ((string ImageSrc, byte[] ImageFileContent))args.Dialog.Input;
+    }
+
+    private async Task ReadFile()
+    {
+        _uploading = true;
+        try
+        {
+            var element = _fileReaderService.CreateReference(inputTypeFileElement);
+            var files = await element.EnumerateFilesAsync();
+            var file = files.FirstOrDefault();
+            if (file == null)
+            {
+                await _dialogService.ShowMessage(StringResources.UploadImageMessage, DialogMessageType.Error);
+                return;
+            }
+
+            var fileInfo = await file.ReadFileInfoAsync();
+
+            if (fileInfo.Size > (3 * 1024 * 1024))
+            {
+                await _dialogService.ShowMessage(StringResources.ImageTooLargeMessage, DialogMessageType.Error);
+                return;
+            }
+
+            MemoryStream ms = new MemoryStream();
+            ms = await file.CreateMemoryStreamAsync();
+            result.ImageFileContent = ms.ToArray();
+
+            string img = Convert.ToBase64String(result.ImageFileContent, 0, result.ImageFileContent.Length);
+            result.ImageSrc = "data:image/png;base64," + img;
+
+            await _dialog.Hide(result);
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private void DeleteImage()
+    {
+        result.ImageSrc = ""; 
+        result.ImageFileContent = null; 
+        _dialog.Hide(result);
+    }
+}

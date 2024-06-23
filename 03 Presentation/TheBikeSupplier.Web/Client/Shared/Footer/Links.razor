@@ -1,0 +1,33 @@
+﻿<div class="col-12 col-md-3 col-lg-2 mb-3">
+    <div class="d-block d-md-none">
+        <div class="card">
+            <div class="card-header pb-1 pt-1">
+                <h5 class="mb-0">
+                    <button class="btn btn-link btn-block text-left" @onclick="ToggleLinks">
+                        @Title
+                        <i class="fa fa-caret-down"></i>
+                    </button>
+                </h5>
+            </div>
+            <div class="@_linksCssClass">
+                <LinkList IsCollapsed="false" FooterLinks="FooterLinks" />
+            </div>
+        </div>
+    </div>
+    <div class="d-none d-md-inline-block">
+        <h5>@Title</h5>
+        <LinkList IsCollapsed="true" FooterLinks="FooterLinks" />
+    </div>
+</div>
+
+@code {
+    [Parameter] public IList<NavBarLink> FooterLinks { get; set; } = new List<NavBarLink>();
+    [Parameter] public string Title { get; set; }
+    private bool _collapseLinks = true;
+    private string _linksCssClass => _collapseLinks ? "collapse" : null;
+
+    private void ToggleLinks()
+    {
+        _collapseLinks = !_collapseLinks;
+    }
+}

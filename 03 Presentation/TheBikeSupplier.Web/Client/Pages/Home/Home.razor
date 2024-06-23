@@ -1,0 +1,38 @@
+﻿@page "/home"
+
+<Header CssClass="index-header" />
+<div class="container">
+    <Info SectionInfo="@StringResources.HomePageBikeInfo"
+          SectionTitle="@StringResources.Bikes"
+          LinkPath="bikes"
+          LinkText="See all bikes"
+          ImagePath="images/bicycles.jpg"
+          IsReversed="false" />
+
+    <Info SectionInfo="@StringResources.HomePageRentInfo"
+          SectionTitle="@StringResources.Rent"
+          LinkPath="rent"
+          LinkText="See rental options"
+          ImagePath="images/bikes1.jpg"
+          IsReversed="true" />
+
+    <Info SectionInfo="@StringResources.HomePageRepairInfo"
+          SectionTitle="@StringResources.Repair"
+          LinkPath="repair"
+          LinkText="See our services"
+          ImagePath="images/workshop.jpg"
+          IsReversed="false" />
+
+    <Info SectionInfo="@StringResources.HomePageTourInfo"
+          SectionTitle="@StringResources.Tours"
+          LinkPath="tours"
+          LinkText="See available tours"
+          ImagePath="images/tour3.jpg"
+          IsReversed="true" />
+
+    <OpeningHours />
+</div>
+
+@code   {
+    
+}

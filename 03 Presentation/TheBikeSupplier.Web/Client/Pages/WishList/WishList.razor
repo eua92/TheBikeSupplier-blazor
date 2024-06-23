@@ -1,0 +1,82 @@
+﻿@page "/wishList"
+@inject NavigationManager _navigationManager
+@inject IWishListService _wishListService
+@inject IBasketService _basketService
+@inject IBlazorDialogService _blazorDialogService
+
+<div class="container top-page-margin">
+    <h3>Wish List</h3>
+    <div>
+        <div class="card-body">
+            <div class="row">
+                @foreach (var item in _wishListService.WishList.WishListItems)
+                {
+                    <div class="col-md-6 col-lg-4 pb-4">
+                        <div class="item-box">
+                            <figure class="hovereffect">
+                                <img alt="@item.Name" class="img-fluid" src="@(item.ImageSrc + $"?v={DateTime.UtcNow.Ticks}")">
+                                <div class="overlay d-flex flex-row justify-content-center">
+                                    @if (!_authState.User.IsInRole(Roles.Admin))
+                                    {
+                                        <button @onclick="(() => Delete(item.Id))" class="info btn btn-info mt-auto mb-3 mr-3">
+                                            <i class="fa fa-trash-can"></i>
+                                        </button>
+                                    }
+                                    <button @onclick="(() => ShowQuickviewDialog(item))" class="info btn btn-info mt-auto mb-3 mr-3">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                    @if (!_authState.User.IsInRole(Roles.Admin))
+                                    {
+                                        <button @onclick="(() => AddToBasket(item.Id))" class="info btn btn-info mt-auto mb-3">
+                                            <i class="fa fa-shopping-cart"></i>
+                                        </button>
+                                    }
+                                </div>
+                                @*@if (item.Stock < 100)
+                                    {
+                                        <div class="productStock @(item.Stock == 0 ? "outOfStock" : "lowInStock")">@(item.Stock == 0 ? "Out of stock" : $"Only {item.Stock} left")</div>
+                                    }*@
+                            </figure>
+                            <h5 class="h6">@item.Name.ToUpper()</h5>
+                            <h6 class="h5">@item.Price.ToString("c0", CultureInfo.CreateSpecificCulture("gr-GR"))</h6>
+                            @*<AuthorizeView Roles="@Roles.Admin">
+                                    <div class="mt-2">
+                                        <button class="btn btn-warning" @onclick="(() => Details(item.Id))">@StringResources.Edit</button>
+                                        <button class="btn btn-danger" asp-page-handler="delete" @onclick="(() => Delete(item.Id))">@StringResources.Delete</button>
+                                    </div>
+                                </AuthorizeView>*@
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<QuickViewModal />
+
+@code {
+    [CascadingParameter] protected Task<AuthenticationState> AuthState { get; set; }
+    private AuthenticationState _authState;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _authState = await AuthState;
+        await _wishListService.GetWishList();
+    }
+
+    private async Task ShowQuickviewDialog(WishListItemViewModel item)
+    {
+        await _blazorDialogService.ShowDialog("quickview-modal", item);
+    }
+
+    private async Task AddToBasket(Guid bikeId)
+    {
+        await _basketService.AddBasketItem(bikeId, _authState.User);
+    }
+
+    private async Task Delete(Guid bikeId)
+    {
+        
+    }
+}

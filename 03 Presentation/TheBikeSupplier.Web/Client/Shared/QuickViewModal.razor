@@ -1,0 +1,14 @@
+﻿<BlazorDialog.Dialog Id="quickview-modal" Size="DialogSize.Large" Centered="true">
+    <BlazorDialog.DialogInputProvider TInput="IProductViewModel">
+        <DialogHeader ShowClose="true" CssClass="modal-underline">
+            <h3 class="modal-title">@context.Input.Name.ToUpper()</h3>
+        </DialogHeader>
+        <DialogBody>
+            <div class="row">
+                <div class="col-12">
+                    <img class="img-fluid" alt="@context.Input.Name" src="@context.Input.ImageSrc">
+                </div>
+            </div>
+        </DialogBody>
+    </BlazorDialog.DialogInputProvider>
+</BlazorDialog.Dialog>

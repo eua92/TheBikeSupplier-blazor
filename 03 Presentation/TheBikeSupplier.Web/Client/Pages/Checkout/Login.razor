@@ -1,0 +1,28 @@
+﻿@page "/login"
+@inject NavigationManager _navigationManager
+
+<div class="container top-page-margin signup">
+    <LoginForm OnLogin="OnLogin" />
+    <div class="text-divider mt-3 mb-4">OR</div>
+    <button class="btn btn-secondary btn-block btn-round" @onclick="NavigateToSignUp">@StringResources.CreateAccount</button>
+    <button class="btn btn-dark btn-block btn-round mb-5" @onclick="NavigateToCheckout">Continue as Visitor</button>
+</div>
+
+@code {
+
+    private async Task OnLogin(bool loginResult)
+    {
+        if (loginResult)
+            NavigateToCheckout();
+    }
+
+    private void NavigateToSignUp()
+    {
+        _navigationManager.NavigateTo("/createAccount");
+    }
+
+    private void NavigateToCheckout()
+    {
+        _navigationManager.NavigateTo($"/checkout/{(int)CheckoutSteps.CheckoutSummary}");
+    }
+}

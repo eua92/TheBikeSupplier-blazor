@@ -1,0 +1,120 @@
+﻿@inject IBlazorDialogService _blazorDialogService
+@inject NavigationManager _navigationManager
+@inject AppAuthenticationStateProvider _authStateProvider
+@inject IBasketService _basketService
+@inject IWishListService _wishListService;
+@inject IUserService _userService
+@implements IDisposable
+
+<nav class="navbar navbar-expand-md navbar-light bg-light fixed-top">
+    <div class="container-fluid">
+        <div class="nav navbar-header">
+            <a class="navbar-brand mr-md-3 mr-lg-5" href="#"><img src="images/logo.png" height="50"></a>
+        </div>
+
+        <button class="navbar-toggler @(_collapseNavMenu ? "collapsed" : null)" type="button" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon" />
+        </button>
+
+        <div class="collapse navbar-collapse @(_collapseNavMenu ? null : "show")">
+            <ul class="nav navbar-nav mr-auto">
+                @foreach (var item in SiteLinks.MenuLinks)
+                {
+                    <li class="nav-item">
+                        <NavLink class="nav-link" href="@item.Link">@item.Name.ToUpper()</NavLink>
+                    </li>
+                }
+            </ul>
+            <ul class="nav navbar-nav navbar-right mr-4">
+                <li class="navbar-text mr-4 dropdown" @onmouseover="() => _showNavDropdown = true" @onmouseout="() => _showNavDropdown = false">
+                    <button class="btn btn-link align-top nav-button"><i class="fa fa-user fa-lg" /></button>
+                    <div class="dropdown-menu @(_showNavDropdown ? "show" : null)">
+                        <AuthorizeView>
+                            <NotAuthorized>
+                                <div class="container pb-3 pt-3">
+                                    <div class="font-weight-bold text-center">You are not logged in yet.</div>
+                                    <button class="btn btn-dark btn-block mt-3" @onclick="ShowLoginDialog">@StringResources.Login</button>
+                                </div>
+                            </NotAuthorized>
+                            <Authorized>
+                                <div class="dropdown-item pt-3 mb-2"><span class="font-weight-bold">Hi @_userService.CurrentUser.FirstName</span></div>
+                                <a class="dropdown-item" href="myAccount">
+                                    <i class="fa fa-user fa-fw pr-2" /><span>My Account</span>
+                                </a>
+                                <a class="dropdown-item" href="myOrders">
+                                    <i class="fa fa-cart-flatbed-suitcase fa-fw pr-2" /><span>My Orders</span>
+                                </a>
+                                <button class="btn btn-dark btn-block font-weight-bold mt-3" @onclick="Logout"><span>Logout</span></button>
+                            </Authorized>
+                        </AuthorizeView>
+                    </div>
+                </li>
+                @if (!_authState?.User.IsInRole(Roles.Admin) ?? true)
+                {
+                    <li class="navbar-text mr-4">
+                        <button class="btn btn-link align-top nav-button" @onclick="RedirectToWishList">
+                            <i class="fa fa-heart fa-lg" />
+                        </button>
+                    </li>
+                    <li class="navbar-text">
+                        <button class="btn btn-link align-top nav-button btn-basket" @onclick="RedirectToBasket">
+                            <i class="fa fa-shopping-cart fa-lg" />
+                            <span>@_basketService.BasketInfo.Count</span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</nav>
+<LoginModal />
+
+@code {
+    [CascadingParameter] protected Task<AuthenticationState> AuthState { get; set; }
+    private bool _collapseNavMenu = true;
+    private bool _showNavDropdown = false;
+    private AuthenticationState _authState;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _authState = await AuthState;
+        await _basketService.GetBasketInfo(_authState?.User);
+        await _wishListService.GetWishListId(_authState.User);
+
+        if (_authState.User.Identity.IsAuthenticated)
+            await _userService.GetCurrentUser();
+
+        _basketService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        _basketService.OnChange -= StateHasChanged;
+    }
+
+    private void ToggleNavMenu()
+    {
+        _collapseNavMenu = !_collapseNavMenu;
+    }
+
+    private async Task ShowLoginDialog()
+    {
+        await _blazorDialogService.ShowDialog("login-modal");
+    }
+
+    private async Task Logout()
+    {
+        await _authStateProvider.Logout();
+        _navigationManager.NavigateTo("/home");
+    }
+
+    private void RedirectToBasket()
+    {
+        _navigationManager.NavigateTo($"/basket/{(int)CheckoutSteps.Basket}");
+    }
+
+    private async Task RedirectToWishList()
+    {
+        _navigationManager.NavigateTo("/wishList");
+    }
+}

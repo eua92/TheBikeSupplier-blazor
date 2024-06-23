@@ -1,0 +1,140 @@
+﻿@page "/tours"
+@inject NavigationManager _navigationManager;
+@inject HttpClient _httpClient;
+@inject IDialogService _dialogService;
+@inject IToasterService _toasterService;
+@using System.Globalization;
+
+<Header CssClass="tours-header" />
+<Breadcrumb NavBarLinks="_navBarLinks" />
+<div class="container">
+    <AuthorizeView Roles="@Roles.Admin">
+        <button class="btn btn-primary mb-4" @onclick="(() => AddTour())">@StringResources.AddTour</button>
+    </AuthorizeView>
+
+    <div class="row mb-4">
+        @foreach (var item in Data)
+        {
+            <div class="col-md-6 col-lg-4 pb-4">
+                <div class="item-box">
+                    <figure class="hovereffect">
+                        <img alt="@item.Name" class="img-fluid" src="@(item.ImageSrc + $"?v={DateTime.UtcNow.Ticks}")">
+                        <div class="overlay d-flex flex-row justify-content-center">
+                            <button data-toggle="modal" data-target="#bookTourModal"
+                                    class="book btn btn-info mt-auto mb-3">
+                                BOOK NOW
+                            </button>
+                        </div>
+                    </figure>
+                    <h4 class="pb-3">@item.Name</h4>
+                    <div class="row ml-auto">
+                        <div class="col-8 text-left">
+                            <p class="lead mb-0">Duration:</p>
+                            <p class="font-weight-bold">@item.Duration @(EnumExtensions<TourDurationType>.GetDescriptionShort(item.DurationType).ToLower())</p>
+                        </div>
+                        <div class="col-4 text-left">
+                            <p class="lead mb-0">Level:</p>
+                            <p class="font-weight-bold">@item.Level</p>
+                        </div>
+                        <div class="col-8 text-left">
+                            <p class="lead mb-0">Distance:</p>
+                            <p class="font-weight-bold">@GetDistanceDescription(item)</p>
+                        </div>
+                        <div class="col-4 text-left">
+                            <p class="lead mb-0">Price:</p>
+                            <p class="font-weight-bold">@item.Price.ToString("c0", CultureInfo.CreateSpecificCulture("gr-GR"))</p>
+                        </div>
+                    </div>
+                    <AuthorizeView Roles="@Roles.Admin">
+                        <button class="btn btn-warning" @onclick="(() => Details(item.Id))">@StringResources.Edit</button>
+                        <button class="btn btn-danger" asp-page-handler="delete" @onclick="(() => Delete(item.Id))">@StringResources.Delete</button>
+                    </AuthorizeView>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    public List<TourViewModel> Data { get; set; } = new();
+    private List<NavBarLink> _navBarLinks { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTours();
+
+        _navBarLinks = new List<NavBarLink>
+{
+            new NavBarLink
+            {
+                Name = StringResources.Home,
+                Link = "/home"
+            },
+            new NavBarLink
+            {
+                Name = StringResources.Tours,
+                Link = "/tours",
+                IsActive = true
+            }
+        };
+    }
+
+    private async Task LoadTours()
+    {
+        Data = await _httpClient.GetFromJsonAsync<List<TourViewModel>>($"Tour/GetTours");
+    }
+
+    private void AddTour()
+    {
+        _navigationManager.NavigateTo($"/tourdetails");
+    }
+
+    private void Details(Guid tourId)
+    {
+        _navigationManager.NavigateTo($"/tourdetails/{tourId}");
+    }
+
+    private async Task Delete(Guid tourId)
+    {
+        var result = await _dialogService.ShowConfirm(StringResources.DeleteQuestionMessage, DialogType.YesNo);
+        if (!result.IsConfirmed)
+            return;
+
+        var response = await _httpClient.DeleteAsync($"Tour/DeleteTour/{tourId}");
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+            await _dialogService.ShowMessage(message.Detail, DialogMessageType.Error);
+            return;
+        }
+        _toasterService.ShowToaster(StringResources.DeleteSuccessMessage, ToastType.Success);
+
+        var deleteImageResponse = await _httpClient.DeleteAsync($"Tour/DeleteTourImage/{tourId}");
+        await LoadTours();
+    }
+
+    private string GetDistanceDescription(TourViewModel tour)
+    {
+        var miles = new TourDistanceViewModel();
+        var kilometers = new TourDistanceViewModel();
+
+        if (tour.DistanceUnit == TourDistanceUnit.Kilometers)
+        {
+            miles.Distance = tour.Distance * 0.62137;
+            miles.Unit = EnumExtensions<TourDistanceUnit>.GetDescriptionShort(TourDistanceUnit.Miles);
+
+            kilometers.Distance = tour.Distance;
+            kilometers.Unit = EnumExtensions<TourDistanceUnit>.GetDescriptionShort(tour.DistanceUnit);
+        }
+        else
+        {
+            miles.Distance = tour.Distance;
+            miles.Unit = EnumExtensions<TourDistanceUnit>.GetDescriptionShort(tour.DistanceUnit);
+
+            kilometers.Distance = tour.Distance * 1.60934;
+            kilometers.Unit = EnumExtensions<TourDistanceUnit>.GetDescriptionShort(TourDistanceUnit.Kilometers);
+        }
+
+        return string.Format(StringResources.TourDistanceDescription, kilometers.Distance.ToString("n0"), kilometers.Unit, miles.Distance.ToString("n0"), miles.Unit);
+    }
+}

@@ -1,0 +1,13 @@
+﻿@if (Address != null)
+{
+    <div>@($"{Address.FirstName} {Address.LastName}")</div>
+    <div>@Address.Address</div>
+    <div>@Address.City</div>
+    <div>@Address.Country</div>
+    <div>@Address.PostCode</div>
+    <div>@Address.PhoneNumber</div>
+}
+
+@code {
+    [Parameter] public OrderAddressViewModel Address { get; set; }
+}

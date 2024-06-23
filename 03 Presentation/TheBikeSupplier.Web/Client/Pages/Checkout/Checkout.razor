@@ -1,0 +1,67 @@
+﻿@page "/checkout/{step:int}"
+@page "/basket/{step:int}"
+@inject IBasketService _basketService;
+@implements IAsyncDisposable;
+
+<Loading IsLoading="_isLoading">
+    <div class="container top-page-margin">
+        @if (_basketService.Basket.BasketItems.Count > 0)
+        {
+            @if (Step == (int)CheckoutSteps.Basket)
+            {
+                <BasketReview Basket="_basketService.Basket" />
+            }
+            else if (Step == (int)CheckoutSteps.CheckoutSummary)
+            {
+                <CheckoutSummary Basket="_basketService.Basket" />
+            }
+        }
+        else
+        {
+            <EmptyBasket />
+        }
+    </div>
+</Loading>
+
+@code {
+    [CascadingParameter] protected Task<AuthenticationState> AuthState { get; set; }
+    [Parameter] public int Step { get; set; } = 0;
+    private AuthenticationState _authState;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _authState = await AuthState;
+        await LoadBasketItems();
+        _isLoading = false;
+
+        Enum.TryParse(Step.ToString(), out CheckoutSteps stepEnum);
+        var newStatus = ResolveNewStatus(stepEnum, _basketService.Basket.Status);
+        if (newStatus.HasValue)
+            await _basketService.UpdateBasketStatus(newStatus.Value);
+    }
+
+    private async Task LoadBasketItems()
+    {
+        await _basketService.GetBasketItems();
+        _basketService.OnChange += StateHasChanged;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Step == (int)CheckoutSteps.CheckoutSummary)
+            await _basketService.UpdateBasketStatus(BasketStatus.Abandoned);
+    }
+
+
+    private BasketStatus? ResolveNewStatus(CheckoutSteps checkoutStep, BasketStatus oldStatus)
+    {
+        if (checkoutStep == CheckoutSteps.Basket && oldStatus == BasketStatus.Abandoned)
+            return BasketStatus.Active;
+        else if (checkoutStep == CheckoutSteps.CheckoutSummary)
+            return BasketStatus.Pending;
+        else
+            return null;
+    }
+}
+

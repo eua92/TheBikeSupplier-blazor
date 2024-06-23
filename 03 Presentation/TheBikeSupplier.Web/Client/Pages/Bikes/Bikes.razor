@@ -1,0 +1,89 @@
+﻿@page "/bikes";
+@inject NavigationManager _navigationManager;
+@inject HttpClient _httpClient;
+@inject IDialogService _dialogService;
+@inject IToasterService _toasterService;
+@inject ILogger<Bikes> _logger;
+@inject IWishListService _wishListService;
+
+<Header CssClass="bikes-header" />
+<Breadcrumb NavBarLinks="_navBarLinks" />
+<div class="container">
+    <AuthorizeView Roles="@Roles.Admin">
+        <button class="btn btn-primary mb-4" @onclick="(() => AddBike())">@StringResources.AddBike</button>
+    </AuthorizeView>
+
+    <div class="mb-5">
+        @foreach (var item in BikeKinds)
+        {
+            <BikeList Title="@item.ToString()" Data="Data.Where(x => x.Kind == item).ToList()" OnDelete="Delete" ShowBikeList="item == BikeKind.Road" OnLoad="LoadBikes" />
+        }
+    </div>
+</div>
+
+
+@code {
+    public List<BikeViewModel> Data { get; set; } = new();
+    public IEnumerable<BikeKind> BikeKinds { get; set; } = Enum.GetValues(typeof(BikeKind)).Cast<BikeKind>().ToList();
+    private List<NavBarLink> _navBarLinks { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBikes();
+
+        _navBarLinks = new List<NavBarLink>
+    {
+            new NavBarLink
+            {
+                Name = StringResources.Home,
+                Link = "/home"
+            },
+            new NavBarLink
+            {
+                Name = StringResources.Bikes,
+                Link = "/bikes",
+                IsActive = true
+            }
+        };
+    }
+
+    private async Task LoadBikes()
+    {
+        var response = await _httpClient.PostAsJsonAsync($"Bike/GetBikes", new GetBikesDto
+        {
+            Type = AcquisitionType.Buy,
+            WishListId = _wishListService.WishListId
+        });
+        if (response.IsSuccessStatusCode)
+        {
+            Data = await response.Content.ReadFromJsonAsync<List<BikeViewModel>>();
+        }
+    }
+
+    private void AddBike()
+    {
+        _navigationManager.NavigateTo($"/bikedetails/{(int)AcquisitionType.Buy}");
+    }
+
+    private async Task Delete(Guid bikeId)
+    {
+        var result = await _dialogService.ShowConfirm(StringResources.DeleteQuestionMessage, DialogType.YesNo);
+        if (!result.IsConfirmed)
+            return;
+
+        var response = await _httpClient.DeleteAsync($"Bike/DeleteBike/{bikeId}");
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+            await _dialogService.ShowMessage(message.Detail, DialogMessageType.Error);
+            return;
+        }
+        _toasterService.ShowToaster(StringResources.DeleteSuccessMessage, ToastType.Success);
+
+        var deleteImageResponse = await _httpClient.DeleteAsync($"Bike/DeleteBikeImage/{bikeId}");
+        if (!deleteImageResponse.IsSuccessStatusCode)
+            _logger.LogError(string.Format(StringResources.FailedToDeleteImageFromAzure, bikeId));
+
+        await LoadBikes();
+    }
+}

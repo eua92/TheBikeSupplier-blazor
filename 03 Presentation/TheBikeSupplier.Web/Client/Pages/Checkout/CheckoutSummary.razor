@@ -1,0 +1,80 @@
+﻿@inject IBlazorDialogService _blazorDialogService;
+@inject HttpClient _httpClient;
+@inject IDialogService _dialogService;
+@inject IToasterService _toasterService;
+@inject NavigationManager _navigationManager;
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="container">
+            <div class="mb-5">
+                <h4 class="mb-4 pb-3 row-border">Shipping Address</h4>
+                <ViewAddress Address="OrderAddresses.FirstOrDefault(x => x.Type == AddressType.Both || x.Type == AddressType.Shipping)" />
+                <button @onclick="() => EditAddress(OrderAddresses.FirstOrDefault(x => x.Type == AddressType.Both || x.Type == AddressType.Shipping), AddressType.Both)" type="button" class="btn btn-secondary mt-3">
+                    @(OrderAddresses.FirstOrDefault(x => x.Type == AddressType.Both || x.Type == AddressType.Shipping) == null ? "Add Address" : "Edit Address")
+                </button>
+            </div>
+            <div class="mt-5">
+                <h4 class="mb-4 pb-3 row-border">Billing Address</h4>
+                <div class="form-check disabled">
+                    <input class="form-check-input" type="checkbox" checked="@OrderAddresses.Any(x => x.Type == AddressType.Both)" id="billing-address" @onchange="HandleCheckboxChange">
+                    <label class="form-check-label" for="billing-address">Same as shipping address</label>
+                </div>
+                <ViewAddress Address="OrderAddresses.FirstOrDefault(x => x.Type == AddressType.Billing)" />
+                <button @onclick="() => EditAddress(OrderAddresses.FirstOrDefault(x => x.Type == AddressType.Billing), AddressType.Billing)" type="button" class="btn btn-secondary mt-3" disabled="@(OrderAddresses.Any(x => x.Type == AddressType.Both))">
+                    Add a different address
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5 mt-5 mt-lg-0">
+        <OrderSummary Basket="Basket" OnBuy="Buy" />
+    </div>
+</div>
+
+<EditAddress />
+
+@code {
+    [Parameter] public BasketViewModel Basket { get; set; }
+    public List<OrderAddressViewModel> OrderAddresses { get; set; } = new();
+
+    private async Task EditAddress(OrderAddressViewModel address, AddressType type)
+    {
+        var result = await _blazorDialogService.ShowDialog<OrderAddressViewModel>("edit-address", address ?? new OrderAddressViewModel
+        {
+            Type = type
+        });
+        if (result != null && result.Id == Guid.Empty)
+        {
+            result.Id = Guid.NewGuid();
+            OrderAddresses.Add(result);
+        }
+    }
+
+    private async Task Buy()
+    {
+        if (!OrderAddresses.Any(x => x.Type == AddressType.Both) && !(OrderAddresses.Any(x => x.Type == AddressType.Billing) && OrderAddresses.Any(x => x.Type == AddressType.Shipping)))
+        {
+            await _dialogService.ShowMessage("Error", DialogMessageType.Error);
+            return;
+        }
+
+        var response = await _httpClient.PostAsJsonAsync($"Order/CreateOrder/{Basket.Id}", OrderAddresses);
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+            await _dialogService.ShowMessage(message.Detail, DialogMessageType.Error);
+            return;
+        }
+        _navigationManager.NavigateTo("/home");
+        _toasterService.ShowToaster(StringResources.OrderSuccessfullyPlacedMessage, ToastType.Success);
+    }
+
+    private void HandleCheckboxChange(ChangeEventArgs args)
+    {
+        var value = Boolean.Parse(args.Value.ToString());
+        var address = value ? OrderAddresses.FirstOrDefault(x => x.Type == AddressType.Shipping) : OrderAddresses.FirstOrDefault(x => x.Type == AddressType.Both);
+        if (address != null)
+            address.Type = value ? AddressType.Both : AddressType.Shipping;
+    }
+}

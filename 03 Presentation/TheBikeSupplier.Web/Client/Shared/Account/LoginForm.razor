@@ -1,0 +1,56 @@
+﻿@inject AppAuthenticationStateProvider _authStateProvider
+@inject IBasketService _basketService
+
+<EditForm Model="_loginParameters" OnValidSubmit="@(async() => await Login())">
+    <DataAnnotationsValidator />
+    <div class="form-group">
+        <label class="sr-only" for="emailAddress">@StringResources.EmailAddress</label>
+        <input @bind-value="@_loginParameters.UserName" type="text" class="form-control" id="emailAddress"
+               placeholder="@StringResources.EmailInputPlaceholder">
+        <ValidationMessage For="@(() => _loginParameters.UserName)"></ValidationMessage>
+    </div>
+    <div class="form-group">
+        <label class="sr-only" for="inputPassword">@StringResources.Password</label>
+        <input @bind-value="@_loginParameters.Password" type="password" class="form-control" id="password"
+               placeholder="@StringResources.PasswordInputPlaceholder">
+        <ValidationMessage For="@(() => _loginParameters.Password)"></ValidationMessage>
+    </div>
+    <button class="btn btn-info btn-block btn-round mb-4" type="submit">@StringResources.Login</button>
+    <div class="form-check">
+        <label class="form-check-label">
+            <input @bind-value="@_loginParameters.RememberMe" class="form-check-input" type="checkbox">
+            @StringResources.RememberMe
+        </label>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <p class="text-danger mt-4 mb-1">@_errorMessage</p>
+    }
+</EditForm>
+
+@code {
+    [CascadingParameter] protected Task<AuthenticationState> AuthState { get; set; }
+    [Parameter] public EventCallback<bool> OnLogin { get; set; }
+    private LoginParameters _loginParameters = new LoginParameters();
+    private string _errorMessage;
+    private AuthenticationState _authState;
+
+    private async Task Login()
+    {
+        var result = await _authStateProvider.Login(_loginParameters);
+        if (result.Failed)
+        {
+            _errorMessage = result.ErrorMessage;
+            await OnLogin.InvokeAsync(false);
+        }
+        await AddBasketItems();
+        await OnLogin.InvokeAsync(true);
+    }
+
+    private async Task AddBasketItems()
+    {
+        _authState = await AuthState;
+        if (_authState.User.IsInRole(Roles.User))
+            await _basketService.AddBasketItems(_authState.User);
+    }
+}
